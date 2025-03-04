@@ -68,10 +68,6 @@ components:
           targetPort: 4172
           protocol: tcp
           exposure: internal
-      securityContext:
-        capabilities:
-          add: ["NET_ADMIN"]
-        privileged: false
   - name: m2
     volume:
       size: 3Gi
