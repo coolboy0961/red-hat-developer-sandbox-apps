@@ -26,78 +26,52 @@ starterProjects:
       remotes:
         eap-devfile-examples: https://github.com/jbossas/eap-devfile-examples.git
 components:
-  - name: tools-pod
-    type: 'kubernetes'
-    inlined:
-      - apiVersion: v1
-        kind: Pod
-        metadata:
-          name: tools-pod
-          labels:
-            app: tools-pod
-        spec:
-          securityContext:
-            capabilities:
-              add:
-                - NET_ADMIN
-          containers:
-            - name: tools
-              image: registry.redhat.io/devspaces/udi-rhel9:3.18
-              memoryLimit: 1512Mi
-              volumeMounts:
-                - name: m2
-                  path: /home/user/.m2
-                - name: workspace-storage
-                  path: /projects
-              env:
-                - name: JAVA_OPTS
-                  value: '-Djava.security.egd=file:/dev/urandom -Djboss.host.name=localhost'
-                - name: DEBUG_PORT
-                  value: '5005'
-                - name: NODE_NAME
-                  value: '{{nodeName}}'
-                - name: IMAGE_REGISTRY
-                  value: '{{imageRegistry}}'
-                - name: IMAGE
-                  value: '{{imageName}}'
-                - name: TARGET_NAMESPACE
-                  value: '{{target-namespace}}'
-                - name: VSCODE_DEFAULT_WORKSPACE
-                  value: /projects/wildfly-devfile-examples/.code-workspace
-                - name: USE_JAVA17
-                  value: 'true'
-              ports:
-                - name: debug
-                  containerPort: 5005
-                  protocol: TCP
-                - name: http
-                  containerPort: 8080
-                  protocol: TCP
-                - name: management
-                  containerPort: 9990
-                  protocol: TCP
-                - name: transactions
-                  containerPort: 4172
-                  protocol: TCP
-          volumes:
-            - name: m2
-              persistentVolumeClaim:
-                claimName: m2
-            - name: workspace-storage
-              persistentVolumeClaim:
-                claimName: workspace-storage
-      - apiVersion: v1
-        kind: Service
-        metadata:
-          name: tools-service
-        spec:
-          selector:
-            app: tools-pod
-          ports:
-            - name: http
-              port: 80
-              targetPort: 8080
-              protocol: TCP
+  - name: tools
+    container:
+      image:  registry.redhat.io/devspaces/udi-rhel9:3.18
+      memoryLimit: 1512Mi
+      mountSources: true
+      volumeMounts:
+        - name: m2
+          path: /home/user/.m2
+      env:
+        - name: JAVA_OPTS
+          value: '-Djava.security.egd=file:/dev/urandom -Djboss.host.name=localhost'
+        - name: DEBUG_PORT
+          value: '5005'
+        - name: NODE_NAME
+          value: '{{nodeName}}'
+        - name: IMAGE_REGISTRY
+          value: '{{imageRegistry}}'
+        - name: IMAGE
+          value: '{{imageName}}'
+        - name: TARGET_NAMESPACE
+          value: '{{target-namespace}}'
+        - name: VSCODE_DEFAULT_WORKSPACE
+          value: /projects/wildfly-devfile-examples/.code-workspace
+        - name: USE_JAVA17
+          value: 'true'
+      endpoints:
+        - name: debug
+          exposure: internal
+          protocol: tcp
+          targetPort: 5005
+        - name: 'http'
+          protocol: http
+          targetPort: 8080
+          exposure: public
+        - name: 'management'
+          targetPort: 9990
+          protocol: http
+          exposure: internal
+        - name: 'transactions'
+          targetPort: 4172
+          protocol: tcp
+          exposure: internal
+      securityContext:
+        capabilities:
+          add: ["NET_ADMIN"]
+        privileged: false
   - name: m2
     volume:
       size: 3Gi
@@ -105,8 +79,7 @@ commands:
   - id: package
     exec:
       label: "01 - Build the application."
-      component: tools-pod
-      containerName: tools
+      component: tools
       commandLine: mvn clean verify -Dmaven.wagon.http.ssl.insecure=true
       workingDir: ${PROJECT_SOURCE}
       group:
@@ -115,9 +88,8 @@ commands:
   - id: run
     exec:
       label: "02 - Run the application in dev mode."
-      component: tools-pod
-      containerName: tools
-      commandLine: ./target/server/bin/standalone.sh -Djboss.host.name=${NODE_NAME}
+      component: tools
+      commandLine: ./target/server/bin/standalone.sh -Djboss.host.name=${NODE_NAME} 
       workingDir: ${PROJECT_SOURCE}
       group:
         kind: run
@@ -125,9 +97,8 @@ commands:
   - id: debug
     exec:
       label: "03 - Debug the application in dev mode."
-      component: tools-pod
-      containerName: tools
-      commandLine: ./target/server/bin/standalone.sh -Djboss.host.name=${NODE_NAME} --debug
+      component: tools
+      commandLine: ./target/server/bin/standalone.sh -Djboss.host.name=${NODE_NAME} --debug 
       workingDir: ${PROJECT_SOURCE}
       group:
         kind: debug
@@ -135,8 +106,7 @@ commands:
   - id: shutdown
     exec:
       label: "04 - Shutdown the server."
-      component: tools-pod
-      containerName: tools
+      component: tools
       commandLine: ./target/server/bin/jboss-cli.sh -c --command=shutdown
       workingDir: ${PROJECT_SOURCE}
       hotReloadCapable: false
