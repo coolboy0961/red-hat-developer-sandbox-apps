@@ -1,4 +1,4 @@
-schemaVersion: 2.2.0
+schemaVersion: 2.3.0
 metadata:
   name: java-jboss-eap
   version: 1.0.0
@@ -35,7 +35,7 @@ components:
         - name: m2
           path: /home/user/.m2
         - name: dev-net-tun
-          mountPath: /dev/net/tun
+          path: /dev/net/tun
         - name: shm
           mountPath: /dev/shm
       env:
@@ -72,18 +72,19 @@ components:
           targetPort: 4172
           protocol: tcp
           exposure: internal
-      securityContext:
-        privileged: true  # 完全な権限を付与
-        capabilities:
-          add: ["NET_ADMIN", "SYS_ADMIN"]  # ネットワーク管理権限
+      attributes:
+        che.eclipse.org/security-context: |
+          privileged: true
+          capabilities:
+            add: ["NET_ADMIN", "SYS_ADMIN"]
   - name: m2
     volume:
       size: 3Gi
   - name: dev-net-tun
     volume:
-      hostPath:
-        path: /dev/net/tun
-        type: CharDevice  # デバイスタイプを明示
+      ephemeral: false
+      attributes:
+        che.eclipse.org/host-path: /dev/net/tun
   - name: shm
     volume:
       emptyDir:
