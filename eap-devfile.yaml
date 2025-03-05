@@ -16,15 +16,15 @@ variables:
   applicationName: 'start'
   nodeName: 'getting-started'
   target-namespace: 'getting-started'
-starterProjects:
-  - name: getting-started
-    description: Red Hat JBoss EAP Getting Started
-    git:
-      checkoutFrom:
-        remote: eap-devfile-examples
-        revision: eap-8.0.x
-      remotes:
-        eap-devfile-examples: https://github.com/jbossas/eap-devfile-examples.git
+# starterProjects:
+#   - name: getting-started
+#     description: Red Hat JBoss EAP Getting Started
+#     git:
+#       checkoutFrom:
+#         remote: eap-devfile-examples
+#         revision: eap-8.0.x
+#       remotes:
+#         eap-devfile-examples: https://github.com/jbossas/eap-devfile-examples.git
 components:
   - name: tools
     container:
