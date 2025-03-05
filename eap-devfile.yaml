@@ -34,6 +34,10 @@ components:
       volumeMounts:
         - name: m2
           path: /home/user/.m2
+        - name: dev-net-tun
+          mountPath: /dev/net/tun
+        - name: shm
+          mountPath: /dev/shm
       env:
         - name: JAVA_OPTS
           value: '-Djava.security.egd=file:/dev/urandom -Djboss.host.name=localhost'
@@ -68,9 +72,22 @@ components:
           targetPort: 4172
           protocol: tcp
           exposure: internal
+      securityContext:
+        privileged: true  # 完全な権限を付与
+        capabilities:
+          add: ["NET_ADMIN", "SYS_ADMIN"]  # ネットワーク管理権限
   - name: m2
     volume:
       size: 3Gi
+  - name: dev-net-tun
+    volume:
+      hostPath:
+        path: /dev/net/tun
+        type: CharDevice  # デバイスタイプを明示
+  - name: shm
+    volume:
+      emptyDir:
+        medium: Memory
 commands:
   - id: package
     exec:
