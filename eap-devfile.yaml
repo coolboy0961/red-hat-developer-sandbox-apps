@@ -1,4 +1,4 @@
-schemaVersion: 2.3.0
+schemaVersion: 2.2.0  # 公式サポートバージョンに固定
 metadata:
   name: java-jboss-eap
   version: 1.0.0
@@ -28,16 +28,16 @@ starterProjects:
 components:
   - name: tools
     container:
-      image:  registry.redhat.io/devspaces/udi-rhel9:3.18
+      image: registry.redhat.io/devspaces/udi-rhel9:3.18
       memoryLimit: 1512Mi
       mountSources: true
       volumeMounts:
         - name: m2
-          path: /home/user/.m2
+          path: /home/user/.m2  # mountPath → path に統一
         - name: dev-net-tun
-          path: /dev/net/tun
+          path: /dev/net/tun    # mountPath → path
         - name: shm
-          mountPath: /dev/shm
+          path: /dev/shm        # mountPath → path
       env:
         - name: JAVA_OPTS
           value: '-Djava.security.egd=file:/dev/urandom -Djboss.host.name=localhost'
@@ -60,35 +60,29 @@ components:
           exposure: internal
           protocol: tcp
           targetPort: 5005
-        - name: 'http'
+        - name: http
           protocol: http
           targetPort: 8080
           exposure: public
-        - name: 'management'
+        - name: management
           targetPort: 9990
           protocol: http
           exposure: internal
-        - name: 'transactions'
+        - name: transactions
           targetPort: 4172
           protocol: tcp
           exposure: internal
-      attributes:
-        che.eclipse.org/security-context: |
-          privileged: true
-          capabilities:
-            add: ["NET_ADMIN", "SYS_ADMIN"]
   - name: m2
     volume:
       size: 3Gi
   - name: dev-net-tun
     volume:
+      size: 1Gi  # OpenShift で必須のパラメータ
       ephemeral: false
-      attributes:
-        che.eclipse.org/host-path: /dev/net/tun
   - name: shm
     volume:
-      emptyDir:
-        medium: Memory
+      size: 1Gi
+      ephemeral: true
 commands:
   - id: package
     exec:
